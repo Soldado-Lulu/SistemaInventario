@@ -102,7 +102,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Text="Gestión de Inventario"
+                        <TextBlock Text="El sistema de gestion de mi negocio"
                                    FontSize="30"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimaryBrush}"/>
