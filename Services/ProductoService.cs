@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SistemaInventario.Data;
 using SistemaInventario.Models;
-
+/*
+ volver aqui porque haremos muchoss cambios para optimizar
+ */
 namespace SistemaInventario.Services
 {
     public class ProductoService
