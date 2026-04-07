@@ -1,13 +1,6 @@
 ﻿using SistemaInventario.Models;
 using SistemaInventario.Services;
 using System.Globalization;
-using System.Windows.Controls;
-
-using System.Windows;
-
-using SistemaInventario.Models;
-using SistemaInventario.Services;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -16,9 +9,13 @@ namespace SistemaInventario.Views
     public partial class InventarioPage : Page
     {
         private readonly ProductoService _productoService = new();
-        private List<Producto> _productos = new();
+
         private List<Categoria> _categorias = new();
         private Producto? _productoSeleccionado;
+
+        private int _paginaActual = 1;
+        private const int _tamanioPagina = 20;
+        private int _totalRegistros = 0;
 
         public InventarioPage()
         {
@@ -38,36 +35,63 @@ namespace SistemaInventario.Views
 
         private void CargarInventario()
         {
-            _productos = _productoService.ObtenerTodos()
-                .OrderBy(p => p.Nombre)
-                .ToList();
-
-            AplicarFiltros();
-            ActualizarResumen();
-        }
-
-        private void AplicarFiltros()
-        {
-            string texto = TxtBuscar.Text.Trim().ToLower();
+            string texto = TxtBuscar.Text?.Trim();
             int? categoriaId = CbCategoriaFiltro.SelectedValue as int?;
 
-            var filtrados = _productos.Where(p =>
-                (string.IsNullOrWhiteSpace(texto) ||
-                 p.Nombre.ToLower().Contains(texto) ||
-                 (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)))
-                &&
-                (!categoriaId.HasValue || p.CategoriaId == categoriaId.Value)
-            ).ToList();
+            var resultado = _productoService.ObtenerPaginado(
+                _paginaActual,
+                _tamanioPagina,
+                texto,
+                categoriaId);
+
+            _totalRegistros = resultado.Total;
 
             DgInventario.ItemsSource = null;
-            DgInventario.ItemsSource = filtrados;
+            DgInventario.ItemsSource = resultado.Items;
+
+            TxtResumenProductos.Text = _totalRegistros.ToString();
+            TxtResumenStockBajo.Text = _productoService.ObtenerTodos().Count(p => p.Stock <= 5).ToString();
+            TxtResumenCategorias.Text = _productoService.ObtenerCategorias().Count.ToString();
+
+            int totalPaginas = _totalRegistros == 0
+                ? 1
+                : (int)Math.Ceiling((double)_totalRegistros / _tamanioPagina);
+
+            TxtPagina.Text = $"Página {_paginaActual} de {totalPaginas}";
         }
 
-        private void ActualizarResumen()
+        private void BtnAnterior_Click(object sender, RoutedEventArgs e)
         {
-            TxtResumenProductos.Text = _productos.Count.ToString();
-            TxtResumenStockBajo.Text = _productos.Count(p => p.Stock <= 5).ToString();
-            TxtResumenCategorias.Text = _productos.Select(p => p.CategoriaId).Distinct().Count().ToString();
+            if (_paginaActual > 1)
+            {
+                _paginaActual--;
+                CargarInventario();
+            }
+        }
+
+        private void BtnSiguiente_Click(object sender, RoutedEventArgs e)
+        {
+            int totalPaginas = _totalRegistros == 0
+                ? 1
+                : (int)Math.Ceiling((double)_totalRegistros / _tamanioPagina);
+
+            if (_paginaActual < totalPaginas)
+            {
+                _paginaActual++;
+                CargarInventario();
+            }
+        }
+
+        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _paginaActual = 1;
+            CargarInventario();
+        }
+
+        private void CbCategoriaFiltro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _paginaActual = 1;
+            CargarInventario();
         }
 
         private void DgInventario_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -78,16 +102,6 @@ namespace SistemaInventario.Views
             _productoSeleccionado = producto;
             TxtProductoSeleccionado.Text = producto.Nombre;
             TxtStockActual.Text = producto.Stock.ToString();
-        }
-
-        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AplicarFiltros();
-        }
-
-        private void CbCategoriaFiltro_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            AplicarFiltros();
         }
 
         private void BtnEntrada_Click(object sender, RoutedEventArgs e)

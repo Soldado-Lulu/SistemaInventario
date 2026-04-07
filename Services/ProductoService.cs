@@ -1,23 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SistemaInventario.Data;
 using SistemaInventario.Models;
-/*
- volver aqui porque haremos muchoss cambios para optimizar
- */
+
 namespace SistemaInventario.Services
 {
     public class ProductoService
     {
+        public (List<Producto> Items, int Total) ObtenerPaginado(
+            int pagina,
+            int tamanio,
+            string? textoBusqueda = null,
+            int? categoriaId = null)
+        {
+            using var db = new AppDbContext();
+
+            var query = db.Productos
+                .AsNoTracking()
+                .Include(p => p.Categoria)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(textoBusqueda))
+            {
+                string texto = textoBusqueda.Trim().ToLower();
+
+                query = query.Where(p =>
+                    p.Nombre.ToLower().Contains(texto) ||
+                    (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)));
+            }
+
+            if (categoriaId.HasValue)
+            {
+                query = query.Where(p => p.CategoriaId == categoriaId.Value);
+            }
+
+            int total = query.Count();
+
+            var items = query
+                .OrderBy(p => p.Nombre)
+                .Skip((pagina - 1) * tamanio)
+                .Take(tamanio)
+                .ToList();
+
+            return (items, total);
+        }
+
         public List<Producto> ObtenerTodos()
         {
             using var db = new AppDbContext();
 
             return db.Productos
+                .AsNoTracking()
                 .Include(p => p.Categoria)
                 .OrderBy(p => p.Nombre)
                 .ToList();
@@ -28,6 +60,7 @@ namespace SistemaInventario.Services
             using var db = new AppDbContext();
 
             return db.Productos
+                .AsNoTracking()
                 .Include(p => p.Categoria)
                 .FirstOrDefault(p => p.Id == id);
         }
@@ -111,9 +144,11 @@ namespace SistemaInventario.Services
             using var db = new AppDbContext();
 
             return db.Categorias
+                .AsNoTracking()
                 .OrderBy(c => c.Nombre)
                 .ToList();
         }
+
         public void AjustarStock(int productoId, int cantidad)
         {
             using var db = new AppDbContext();

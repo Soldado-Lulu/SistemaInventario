@@ -32,6 +32,9 @@ namespace SistemaInventario.Data
                 .IsRequired();
 
             modelBuilder.Entity<Producto>()
+                .HasIndex(p => p.Nombre);
+
+            modelBuilder.Entity<Producto>()
                 .Property(p => p.Descripcion)
                 .IsRequired();
 
@@ -48,6 +51,9 @@ namespace SistemaInventario.Data
                 .WithMany(c => c.Productos)
                 .HasForeignKey(p => p.CategoriaId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Venta>()
+                .HasIndex(v => v.Fecha);
 
             modelBuilder.Entity<Venta>()
                 .Property(v => v.Total)
