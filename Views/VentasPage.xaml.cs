@@ -1,20 +1,11 @@
-﻿using System;
+﻿using SistemaInventario.Models;
+using SistemaInventario.Services;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SistemaInventario.Models;
-using SistemaInventario.Services;
-using System.Globalization;
 
 namespace SistemaInventario.Views
 {
@@ -22,16 +13,21 @@ namespace SistemaInventario.Views
     {
         private readonly ProductoService _productoService = new();
         private readonly VentaService _ventaService = new();
+        private readonly ClienteService _clienteService = new();
 
         private List<Producto> _productos = new();
+        private List<Cliente> _clientes = new();
         private List<VentaDetalle> _detalleVenta = new();
 
         public VentasPage()
         {
             InitializeComponent();
             CargarProductos();
+            CargarClientes();
             ActualizarGrid();
             LimpiarFormularioProducto();
+            LimpiarFormularioClienteNuevo();
+            LimpiarInfoClienteSeleccionado();
         }
 
         private void CargarProductos()
@@ -45,6 +41,17 @@ namespace SistemaInventario.Views
             CbProductos.ItemsSource = _productos;
         }
 
+        private void CargarClientes()
+        {
+            _clientes = _clienteService.ObtenerTodos()
+                .OrderBy(c => c.NombreRazonSocial)
+                .ToList();
+
+            CbClientes.ItemsSource = null;
+            CbClientes.ItemsSource = _clientes;
+            CbClientes.SelectedIndex = -1;
+        }
+
         private void LimpiarFormularioProducto()
         {
             CbProductos.SelectedItem = null;
@@ -52,6 +59,20 @@ namespace SistemaInventario.Views
             TxtPrecioUnitario.Text = string.Empty;
             TxtStockDisponible.Text = string.Empty;
             TxtSubtotal.Text = string.Empty;
+        }
+
+        private void LimpiarFormularioClienteNuevo()
+        {
+            TxtNombreClienteNuevo.Text = string.Empty;
+            TxtDocumentoClienteNuevo.Text = string.Empty;
+        }
+
+        private void LimpiarInfoClienteSeleccionado()
+        {
+            TxtDocumentoCliente.Text = string.Empty;
+            TxtCorreoCliente.Text = string.Empty;
+            TxtClienteSeleccionado.Text = "Sin cliente";
+            TxtTelefonoCliente.Text = "-";
         }
 
         private void ActualizarInfoProducto()
@@ -64,8 +85,16 @@ namespace SistemaInventario.Views
                 return;
             }
 
+            int cantidadYaAgregada = _detalleVenta
+                .Where(d => d.ProductoId == producto.Id)
+                .Sum(d => d.Cantidad);
+
+            int stockDisponibleReal = producto.Stock - cantidadYaAgregada;
+            if (stockDisponibleReal < 0)
+                stockDisponibleReal = 0;
+
             TxtPrecioUnitario.Text = producto.PrecioVenta.ToString("N2");
-            TxtStockDisponible.Text = producto.Stock.ToString();
+            TxtStockDisponible.Text = stockDisponibleReal.ToString();
 
             if (int.TryParse(TxtCantidad.Text, out int cantidad) && cantidad > 0)
             {
@@ -76,6 +105,23 @@ namespace SistemaInventario.Views
             {
                 TxtSubtotal.Text = "0.00";
             }
+        }
+
+        private void ActualizarInfoCliente()
+        {
+            if (CbClientes.SelectedItem is not Cliente cliente)
+            {
+                LimpiarInfoClienteSeleccionado();
+                return;
+            }
+
+            TxtDocumentoCliente.Text = string.IsNullOrWhiteSpace(cliente.Complemento)
+                ? cliente.NumeroDocumento
+                : $"{cliente.NumeroDocumento} - {cliente.Complemento}";
+
+            TxtCorreoCliente.Text = cliente.Correo ?? string.Empty;
+            TxtClienteSeleccionado.Text = cliente.NombreRazonSocial;
+            TxtTelefonoCliente.Text = string.IsNullOrWhiteSpace(cliente.Telefono) ? "-" : cliente.Telefono;
         }
 
         private void ActualizarGrid()
@@ -99,6 +145,58 @@ namespace SistemaInventario.Views
         private void TxtCantidad_TextChanged(object sender, TextChangedEventArgs e)
         {
             ActualizarInfoProducto();
+        }
+
+        private void CbClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarInfoCliente();
+        }
+
+        private void BtnGuardarCliente_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string nombre = TxtNombreClienteNuevo.Text.Trim();
+                string documento = TxtDocumentoClienteNuevo.Text.Trim();
+
+                if (string.IsNullOrWhiteSpace(nombre))
+                {
+                    MessageBox.Show("Ingresa el nombre o razón social del cliente.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(documento))
+                {
+                    MessageBox.Show("Ingresa el número de documento o NIT.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var nuevoCliente = new Cliente
+                {
+                    NombreRazonSocial = nombre,
+                    NumeroDocumento = documento,
+                    CodigoTipoDocumentoIdentidad = 1,
+                    Correo = null,
+                    Telefono = null,
+                    Activo = true
+                };
+
+                var clienteGuardado = _clienteService.RegistrarCliente(nuevoCliente);
+
+                CargarClientes();
+
+                var clienteSeleccionado = _clientes.FirstOrDefault(c => c.Id == clienteGuardado.Id);
+                if (clienteSeleccionado != null)
+                    CbClientes.SelectedItem = clienteSeleccionado;
+
+                LimpiarFormularioClienteNuevo();
+
+                MessageBox.Show("Cliente registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void BtnAgregar_Click(object sender, RoutedEventArgs e)
@@ -171,6 +269,7 @@ namespace SistemaInventario.Views
 
             _detalleVenta.Remove(detalle);
             ActualizarGrid();
+            ActualizarInfoProducto();
         }
 
         private void BtnLimpiarVenta_Click(object sender, RoutedEventArgs e)
@@ -197,6 +296,12 @@ namespace SistemaInventario.Views
 
         private void BtnGuardarVenta_Click(object sender, RoutedEventArgs e)
         {
+            if (CbClientes.SelectedItem is not Cliente clienteSeleccionado)
+            {
+                MessageBox.Show("Debes seleccionar un cliente.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (!_detalleVenta.Any())
             {
                 MessageBox.Show("No hay productos en la venta.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -213,14 +318,23 @@ namespace SistemaInventario.Views
                     Subtotal = d.Subtotal
                 }).ToList();
 
-                _ventaService.RegistrarVenta(detallesParaGuardar);
+                int ventaId = _ventaService.RegistrarVenta(
+                    clienteSeleccionado.Id,
+                    detallesParaGuardar,
+                    descuentoAdicional: 0m,
+                    codigoMetodoPago: 1,
+                    observacion: null
+                );
 
-                MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Venta registrada correctamente. ID: {ventaId}", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 _detalleVenta.Clear();
                 ActualizarGrid();
                 CargarProductos();
                 LimpiarFormularioProducto();
+
+                CbClientes.SelectedItem = null;
+                LimpiarInfoClienteSeleccionado();
             }
             catch (Exception ex)
             {

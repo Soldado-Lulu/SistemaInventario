@@ -31,7 +31,7 @@
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Selecciona productos, agrega cantidades y confirma la venta."
+                        <TextBlock Text="Selecciona cliente, agrega productos y confirma la venta."
                                    Margin="0,6,0,0"
                                    FontSize="14"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
@@ -63,7 +63,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2.2*"/>
                     <ColumnDefinition Width="18"/>
-                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1.2*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Tarjeta principal -->
@@ -91,6 +91,8 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="18"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="18"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <StackPanel>
@@ -98,13 +100,95 @@
                                                FontSize="24"
                                                FontWeight="Bold"
                                                Foreground="White"/>
-                                    <TextBlock Text="Elige un producto, define la cantidad y agrégalo al detalle."
+                                    <TextBlock Text="Selecciona cliente, elige un producto, define la cantidad y agrégalo al detalle."
                                                Margin="0,6,0,0"
                                                Foreground="#F4FFFF"
                                                TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <Grid Grid.Row="2">
+                                <!-- Cliente -->
+                                <Border Grid.Row="2"
+                                        Background="#EAF7F6"
+                                        CornerRadius="18"
+                                        Padding="16">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="18"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Cliente"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,8"/>
+
+                                            <ComboBox x:Name="CbClientes"
+                                                      Height="36"
+                                                      Margin="0,0,0,12"
+                                                      DisplayMemberPath="NombreRazonSocial"
+                                                      SelectedValuePath="Id"
+                                                      SelectionChanged="CbClientes_SelectionChanged"/>
+
+                                            <TextBlock Text="Documento / NIT"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,6"/>
+                                            <TextBox x:Name="TxtDocumentoCliente"
+                                                     Height="36"
+                                                     Margin="0,0,0,12"
+                                                     Padding="10,6"
+                                                     IsReadOnly="True"/>
+
+                                            <TextBlock Text="Correo"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,6"/>
+                                            <TextBox x:Name="TxtCorreoCliente"
+                                                     Height="36"
+                                                     Padding="10,6"
+                                                     IsReadOnly="True"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Registrar cliente rápido"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,8"/>
+
+                                            <TextBlock Text="Nombre / Razón Social"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,6"/>
+                                            <TextBox x:Name="TxtNombreClienteNuevo"
+                                                     Height="36"
+                                                     Margin="0,0,0,12"
+                                                     Padding="10,6"/>
+
+                                            <TextBlock Text="Documento / NIT"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Margin="0,0,0,6"/>
+                                            <TextBox x:Name="TxtDocumentoClienteNuevo"
+                                                     Height="36"
+                                                     Margin="0,0,0,12"
+                                                     Padding="10,6"/>
+
+                                            <Button x:Name="BtnGuardarCliente"
+                                                    Content="Guardar cliente"
+                                                    Height="38"
+                                                    Background="White"
+                                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                                    BorderThickness="0"
+                                                    FontWeight="Bold"
+                                                    Click="BtnGuardarCliente_Click"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Producto -->
+                                <Grid Grid.Row="4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="18"/>
@@ -190,9 +274,27 @@
                                        FontSize="22"
                                        FontWeight="Bold"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Confirma el detalle antes de guardar la venta."
+                            <TextBlock Text="Confirma cliente y detalle antes de guardar la venta."
                                        Margin="0,10,0,0"
                                        TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource SoftCardStyle}"
+                            Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Cliente seleccionado"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12"/>
+                            <TextBlock x:Name="TxtClienteSeleccionado"
+                                       Text="Sin cliente"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock x:Name="TxtTelefonoCliente"
+                                       Margin="0,6,0,0"
+                                       Text="-"
                                        Foreground="{StaticResource TextSecondaryBrush}"/>
                         </StackPanel>
                     </Border>
