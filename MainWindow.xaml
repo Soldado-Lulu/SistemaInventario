@@ -69,12 +69,21 @@
                             Style="{StaticResource SidebarButtonStyle}"
                             Click="Productos_Click"/>
 
-                    <Button Content="Reportes"
-                            Style="{StaticResource SidebarButtonStyle}"
-                            Click="Reportes_Click"/>
                     <Button Content="Inventario"
                             Style="{StaticResource SidebarButtonStyle}"
                             Click="Inventario_Click"/>
+
+                    <Button Content="Reportes"
+                            Style="{StaticResource SidebarButtonStyle}"
+                            Click="Reportes_Click"/>
+
+                    <Button Content="Configuración Empresa"
+                            Style="{StaticResource SidebarButtonStyle}"
+                            Click="ConfiguracionEmpresa_Click"/>
+
+                    <Button Content="Facturación"
+                            Style="{StaticResource SidebarButtonStyle}"
+                            Click="Facturas_Click"/>
                 </StackPanel>
 
                 <Button Grid.Row="4"
@@ -102,7 +111,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Text="El sistema de gestion de mi negocio"
+                        <TextBlock Text="El sistema de gestión de mi negocio"
                                    FontSize="30"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimaryBrush}"/>

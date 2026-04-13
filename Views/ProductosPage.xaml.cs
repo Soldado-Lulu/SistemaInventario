@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SistemaInventario.Models;
+﻿using SistemaInventario.Models;
 using SistemaInventario.Services;
 using System.Globalization;
-
+using System.Windows;
+using System.Windows.Controls;
 
 namespace SistemaInventario.Views
 {
@@ -63,6 +50,13 @@ namespace SistemaInventario.Views
             TxtStock.Text = string.Empty;
             TxtDescripcion.Text = string.Empty;
             TxtBuscar.Text = string.Empty;
+            TxtCodigoActividad.Text = string.Empty;
+            TxtCodigoProductoSin.Text = string.Empty;
+            TxtUnidadMedidaSin.Text = string.Empty;
+
+            ChkEsServicio.IsChecked = false;
+            ChkTieneVencimiento.IsChecked = false;
+
             CbCategoria.Text = string.Empty;
             CbCategoria.SelectedItem = null;
 
@@ -72,11 +66,17 @@ namespace SistemaInventario.Views
             DgProductos.ItemsSource = _productos;
         }
 
-        private bool ValidarFormulario(out decimal precioCompra, out decimal precioVenta, out int stock, out string nombreCategoria)
+        private bool ValidarFormulario(
+            out decimal precioCompra,
+            out decimal precioVenta,
+            out int stock,
+            out string nombreCategoria,
+            out int? unidadMedidaSin)
         {
             precioCompra = 0;
             precioVenta = 0;
             stock = 0;
+            unidadMedidaSin = null;
             nombreCategoria = CbCategoria.Text.Trim();
 
             if (string.IsNullOrWhiteSpace(TxtNombre.Text))
@@ -115,6 +115,17 @@ namespace SistemaInventario.Views
                 return false;
             }
 
+            if (!string.IsNullOrWhiteSpace(TxtUnidadMedidaSin.Text))
+            {
+                if (!int.TryParse(TxtUnidadMedidaSin.Text, out int unidad))
+                {
+                    MessageBox.Show("La unidad de medida SIN es inválida.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                unidadMedidaSin = unidad;
+            }
+
             if (precioCompra < 0 || precioVenta < 0 || stock < 0)
             {
                 MessageBox.Show("No se permiten valores negativos.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -124,19 +135,30 @@ namespace SistemaInventario.Views
             return true;
         }
 
-        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        private Producto ConstruirProducto(decimal precioCompra, decimal precioVenta, int stock, int? unidadMedidaSin)
         {
-            if (!ValidarFormulario(out decimal precioCompra, out decimal precioVenta, out int stock, out string nombreCategoria))
-                return;
-
-            var producto = new Producto
+            return new Producto
             {
                 Nombre = TxtNombre.Text.Trim(),
                 PrecioCompra = precioCompra,
                 PrecioVenta = precioVenta,
                 Stock = stock,
-                Descripcion = TxtDescripcion.Text.Trim()
+                Descripcion = TxtDescripcion.Text.Trim(),
+
+                CodigoActividadEconomica = string.IsNullOrWhiteSpace(TxtCodigoActividad.Text) ? null : TxtCodigoActividad.Text.Trim(),
+                CodigoProductoSin = string.IsNullOrWhiteSpace(TxtCodigoProductoSin.Text) ? null : TxtCodigoProductoSin.Text.Trim(),
+                UnidadMedidaSin = unidadMedidaSin,
+                EsServicio = ChkEsServicio.IsChecked == true,
+                TieneFechaVencimiento = ChkTieneVencimiento.IsChecked == true
             };
+        }
+
+        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ValidarFormulario(out decimal precioCompra, out decimal precioVenta, out int stock, out string nombreCategoria, out int? unidadMedidaSin))
+                return;
+
+            var producto = ConstruirProducto(precioCompra, precioVenta, stock, unidadMedidaSin);
 
             _productoService.Crear(producto, nombreCategoria);
             CargarProductos();
@@ -153,16 +175,13 @@ namespace SistemaInventario.Views
                 return;
             }
 
-            if (!ValidarFormulario(out decimal precioCompra, out decimal precioVenta, out int stock, out string nombreCategoria))
+            if (!ValidarFormulario(out decimal precioCompra, out decimal precioVenta, out int stock, out string nombreCategoria, out int? unidadMedidaSin))
                 return;
 
-            _productoSeleccionado.Nombre = TxtNombre.Text.Trim();
-            _productoSeleccionado.PrecioCompra = precioCompra;
-            _productoSeleccionado.PrecioVenta = precioVenta;
-            _productoSeleccionado.Stock = stock;
-            _productoSeleccionado.Descripcion = TxtDescripcion.Text.Trim();
+            var productoActualizado = ConstruirProducto(precioCompra, precioVenta, stock, unidadMedidaSin);
+            productoActualizado.Id = _productoSeleccionado.Id;
 
-            _productoService.Actualizar(_productoSeleccionado, nombreCategoria);
+            _productoService.Actualizar(productoActualizado, nombreCategoria);
             CargarProductos();
             LimpiarFormulario();
 
@@ -211,6 +230,12 @@ namespace SistemaInventario.Views
             TxtStock.Text = producto.Stock.ToString();
             TxtDescripcion.Text = producto.Descripcion;
             CbCategoria.Text = producto.Categoria?.Nombre ?? string.Empty;
+
+            TxtCodigoActividad.Text = producto.CodigoActividadEconomica ?? string.Empty;
+            TxtCodigoProductoSin.Text = producto.CodigoProductoSin ?? string.Empty;
+            TxtUnidadMedidaSin.Text = producto.UnidadMedidaSin?.ToString() ?? string.Empty;
+            ChkEsServicio.IsChecked = producto.EsServicio;
+            ChkTieneVencimiento.IsChecked = producto.TieneFechaVencimiento;
         }
 
         private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
@@ -227,7 +252,9 @@ namespace SistemaInventario.Views
             var filtrados = _productos
                 .Where(p =>
                     p.Nombre.ToLower().Contains(texto) ||
-                    (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)))
+                    (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)) ||
+                    (p.CodigoProductoSin != null && p.CodigoProductoSin.ToLower().Contains(texto)) ||
+                    (p.CodigoActividadEconomica != null && p.CodigoActividadEconomica.ToLower().Contains(texto)))
                 .ToList();
 
             DgProductos.ItemsSource = null;

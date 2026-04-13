@@ -63,8 +63,6 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="18"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="18"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0">
@@ -72,29 +70,21 @@
                            FontSize="26"
                            FontWeight="Bold"
                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                <TextBlock Text="Accesos rápidos para gestionar ventas, productos y reportes."
+                <TextBlock Text="Accesos rápidos para gestionar ventas, productos, reportes y facturación."
                            Margin="0,6,0,0"
                            FontSize="14"
                            Foreground="{StaticResource TextSecondaryBrush}"/>
             </StackPanel>
 
-            <UniformGrid Grid.Row="2" Columns="4">
+            <UniformGrid Grid.Row="2" Columns="5">
 
                 <Button Style="{StaticResource CardButtonStyle}"
                         Tag="{StaticResource CardSellBrush}"
                         Click="BtnVender_Click">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="💰"
-                                   FontSize="38"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock Text="Vender"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#111111"/>
-                        <TextBlock Text="Registrar ventas rápidas"
-                                   Margin="0,8,0,0"
-                                   FontSize="14"
-                                   Foreground="#21343A"/>
+                        <TextBlock Text="💰" FontSize="38" Margin="0,0,0,12"/>
+                        <TextBlock Text="Vender" FontSize="22" FontWeight="Bold" Foreground="#111111"/>
+                        <TextBlock Text="Registrar ventas rápidas" Margin="0,8,0,0" FontSize="14" Foreground="#21343A"/>
                     </StackPanel>
                 </Button>
 
@@ -102,17 +92,9 @@
                         Tag="{StaticResource CardProductsBrush}"
                         Click="BtnProductos_Click">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="📦"
-                                   FontSize="38"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock Text="Productos"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#111111"/>
-                        <TextBlock Text="Crear y administrar productos"
-                                   Margin="0,8,0,0"
-                                   FontSize="14"
-                                   Foreground="#3B2C1D"/>
+                        <TextBlock Text="📦" FontSize="38" Margin="0,0,0,12"/>
+                        <TextBlock Text="Productos" FontSize="22" FontWeight="Bold" Foreground="#111111"/>
+                        <TextBlock Text="Crear y administrar productos" Margin="0,8,0,0" FontSize="14" Foreground="#3B2C1D"/>
                     </StackPanel>
                 </Button>
 
@@ -120,17 +102,9 @@
                         Tag="{StaticResource CardInventoryBrush}"
                         Click="BtnInventario_Click">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="📊"
-                                   FontSize="38"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock Text="Inventario"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#111111"/>
-                        <TextBlock Text="Control de stock"
-                                   Margin="0,8,0,0"
-                                   FontSize="14"
-                                   Foreground="#233B22"/>
+                        <TextBlock Text="📊" FontSize="38" Margin="0,0,0,12"/>
+                        <TextBlock Text="Inventario" FontSize="22" FontWeight="Bold" Foreground="#111111"/>
+                        <TextBlock Text="Control de stock" Margin="0,8,0,0" FontSize="14" Foreground="#233B22"/>
                     </StackPanel>
                 </Button>
 
@@ -138,66 +112,22 @@
                         Tag="{StaticResource CardReportsBrush}"
                         Click="BtnReportes_Click">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="📈"
-                                   FontSize="38"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock Text="Reportes"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#111111"/>
-                        <TextBlock Text="Indicadores y resultados"
-                                   Margin="0,8,0,0"
-                                   FontSize="14"
-                                   Foreground="#243746"/>
+                        <TextBlock Text="📈" FontSize="38" Margin="0,0,0,12"/>
+                        <TextBlock Text="Reportes" FontSize="22" FontWeight="Bold" Foreground="#111111"/>
+                        <TextBlock Text="Indicadores y resultados" Margin="0,8,0,0" FontSize="14" Foreground="#243746"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource CardButtonStyle}"
+                        Tag="#EAF7F6"
+                        Click="BtnConfiguracionEmpresa_Click">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="🏢" FontSize="38" Margin="0,0,0,12"/>
+                        <TextBlock Text="Empresa" FontSize="22" FontWeight="Bold" Foreground="#111111"/>
+                        <TextBlock Text="Datos fiscales y negocio" Margin="0,8,0,0" FontSize="14" Foreground="#1F4E4A"/>
                     </StackPanel>
                 </Button>
             </UniformGrid>
-
-            <Grid Grid.Row="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.4*"/>
-                    <ColumnDefinition Width="18"/>
-                    <ColumnDefinition Width="1*"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0"
-                        Style="{StaticResource SoftCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Espacio estratégico"
-                                   FontSize="14"
-                                   Foreground="{StaticResource TextAccentBrush}"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="Próximos widgets"
-                                   Margin="0,10,0,6"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Aquí puedes mostrar después ventas del día, productos con stock bajo, últimas ventas o alertas importantes del sistema."
-                                   TextWrapping="Wrap"
-                                   FontSize="14"
-                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2"
-                        Style="{StaticResource SoftCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Idea visual"
-                                   FontSize="14"
-                                   Foreground="#B27D47"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="Diseño modular"
-                                   Margin="0,10,0,6"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#5E432A"/>
-                        <TextBlock Text="Cada tarjeta funciona como acceso directo para que el usuario navegue más rápido por el sistema."
-                                   TextWrapping="Wrap"
-                                   FontSize="14"
-                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
         </Grid>
     </ScrollViewer>
 </Page>

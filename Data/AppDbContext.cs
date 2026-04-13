@@ -145,7 +145,24 @@ namespace SistemaInventario.Data
                 .WithMany(c => c.Productos)
                 .HasForeignKey(p => p.CategoriaId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.CodigoActividadEconomica)
+                .HasMaxLength(20);
 
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.CodigoProductoSin)
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.UnidadMedidaSin);
+
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.EsServicio)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.TieneFechaVencimiento)
+                .HasDefaultValue(false);
             // =========================
             // CLIENTE
             // =========================

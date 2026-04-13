@@ -25,13 +25,13 @@ namespace SistemaInventario.Services
 
                 query = query.Where(p =>
                     p.Nombre.ToLower().Contains(texto) ||
-                    (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)));
+                    (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(texto)) ||
+                    (p.CodigoProductoSin != null && p.CodigoProductoSin.ToLower().Contains(texto)) ||
+                    (p.CodigoActividadEconomica != null && p.CodigoActividadEconomica.ToLower().Contains(texto)));
             }
 
             if (categoriaId.HasValue)
-            {
                 query = query.Where(p => p.CategoriaId == categoriaId.Value);
-            }
 
             int total = query.Count();
 
@@ -69,23 +69,12 @@ namespace SistemaInventario.Services
         {
             using var db = new AppDbContext();
 
-            string categoriaNormalizada = nombreCategoria.Trim();
+            ValidarProducto(producto, nombreCategoria);
 
-            var categoriaExistente = db.Categorias
-                .FirstOrDefault(c => c.Nombre.ToLower() == categoriaNormalizada.ToLower());
+            var categoria = ObtenerOCrearCategoria(db, nombreCategoria);
+            producto.CategoriaId = categoria.Id;
 
-            if (categoriaExistente == null)
-            {
-                categoriaExistente = new Categoria
-                {
-                    Nombre = categoriaNormalizada
-                };
-
-                db.Categorias.Add(categoriaExistente);
-                db.SaveChanges();
-            }
-
-            producto.CategoriaId = categoriaExistente.Id;
+            NormalizarProducto(producto);
 
             db.Productos.Add(producto);
             db.SaveChanges();
@@ -95,33 +84,27 @@ namespace SistemaInventario.Services
         {
             using var db = new AppDbContext();
 
-            string categoriaNormalizada = nombreCategoria.Trim();
+            ValidarProducto(producto, nombreCategoria);
 
-            var categoriaExistente = db.Categorias
-                .FirstOrDefault(c => c.Nombre.ToLower() == categoriaNormalizada.ToLower());
-
-            if (categoriaExistente == null)
-            {
-                categoriaExistente = new Categoria
-                {
-                    Nombre = categoriaNormalizada
-                };
-
-                db.Categorias.Add(categoriaExistente);
-                db.SaveChanges();
-            }
+            var categoria = ObtenerOCrearCategoria(db, nombreCategoria);
 
             var productoDb = db.Productos.FirstOrDefault(p => p.Id == producto.Id);
 
             if (productoDb == null)
-                return;
+                throw new Exception("Producto no encontrado.");
 
-            productoDb.Nombre = producto.Nombre;
+            productoDb.Nombre = producto.Nombre.Trim();
             productoDb.PrecioCompra = producto.PrecioCompra;
             productoDb.PrecioVenta = producto.PrecioVenta;
             productoDb.Stock = producto.Stock;
-            productoDb.Descripcion = producto.Descripcion;
-            productoDb.CategoriaId = categoriaExistente.Id;
+            productoDb.Descripcion = string.IsNullOrWhiteSpace(producto.Descripcion) ? string.Empty : producto.Descripcion.Trim();
+            productoDb.CategoriaId = categoria.Id;
+
+            productoDb.CodigoActividadEconomica = LimpiarTextoOpcional(producto.CodigoActividadEconomica);
+            productoDb.CodigoProductoSin = LimpiarTextoOpcional(producto.CodigoProductoSin);
+            productoDb.UnidadMedidaSin = producto.UnidadMedidaSin;
+            productoDb.EsServicio = producto.EsServicio;
+            productoDb.TieneFechaVencimiento = producto.TieneFechaVencimiento;
 
             db.SaveChanges();
         }
@@ -165,6 +148,61 @@ namespace SistemaInventario.Services
 
             producto.Stock = nuevoStock;
             db.SaveChanges();
+        }
+
+        private static Categoria ObtenerOCrearCategoria(AppDbContext db, string nombreCategoria)
+        {
+            string categoriaNormalizada = nombreCategoria.Trim();
+
+            var categoriaExistente = db.Categorias
+                .FirstOrDefault(c => c.Nombre.ToLower() == categoriaNormalizada.ToLower());
+
+            if (categoriaExistente != null)
+                return categoriaExistente;
+
+            categoriaExistente = new Categoria
+            {
+                Nombre = categoriaNormalizada
+            };
+
+            db.Categorias.Add(categoriaExistente);
+            db.SaveChanges();
+
+            return categoriaExistente;
+        }
+
+        private static void ValidarProducto(Producto producto, string nombreCategoria)
+        {
+            if (producto == null)
+                throw new Exception("Los datos del producto son obligatorios.");
+
+            if (string.IsNullOrWhiteSpace(producto.Nombre))
+                throw new Exception("El nombre del producto es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(nombreCategoria))
+                throw new Exception("La categoría es obligatoria.");
+
+            if (producto.PrecioCompra < 0 || producto.PrecioVenta < 0)
+                throw new Exception("Los precios no pueden ser negativos.");
+
+            if (producto.Stock < 0)
+                throw new Exception("El stock no puede ser negativo.");
+
+            if (producto.UnidadMedidaSin.HasValue && producto.UnidadMedidaSin <= 0)
+                throw new Exception("La unidad de medida SIN es inválida.");
+        }
+
+        private static void NormalizarProducto(Producto producto)
+        {
+            producto.Nombre = producto.Nombre.Trim();
+            producto.Descripcion = string.IsNullOrWhiteSpace(producto.Descripcion) ? string.Empty : producto.Descripcion.Trim();
+            producto.CodigoActividadEconomica = LimpiarTextoOpcional(producto.CodigoActividadEconomica);
+            producto.CodigoProductoSin = LimpiarTextoOpcional(producto.CodigoProductoSin);
+        }
+
+        private static string? LimpiarTextoOpcional(string? valor)
+        {
+            return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
         }
     }
 }

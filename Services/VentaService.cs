@@ -10,7 +10,14 @@ namespace SistemaInventario.Services
     public class VentaService
     {
         public int RegistrarVenta(
-            int clienteId,
+            int? clienteId,
+            string nombreCliente,
+            string numeroDocumentoCliente,
+            string? complementoCliente,
+            string? correoCliente,
+            string? celularCliente,
+            int codigoTipoDocumentoIdentidad,
+            bool tieneExencion,
             List<VentaDetalle> detalles,
             decimal descuentoAdicional = 0m,
             int codigoMetodoPago = 1,
@@ -21,15 +28,31 @@ namespace SistemaInventario.Services
 
             try
             {
-                if (clienteId <= 0)
-                    throw new Exception("Debes seleccionar un cliente válido.");
+                nombreCliente = (nombreCliente ?? string.Empty).Trim();
+                numeroDocumentoCliente = (numeroDocumentoCliente ?? string.Empty).Trim();
+                complementoCliente = string.IsNullOrWhiteSpace(complementoCliente) ? null : complementoCliente.Trim();
+                correoCliente = string.IsNullOrWhiteSpace(correoCliente) ? null : correoCliente.Trim();
+                celularCliente = string.IsNullOrWhiteSpace(celularCliente) ? null : celularCliente.Trim();
+                observacion = string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim();
 
-                var cliente = db.Clientes.FirstOrDefault(c => c.Id == clienteId && c.Activo);
-                if (cliente == null)
-                    throw new Exception("El cliente seleccionado no existe o está inactivo.");
+                if (string.IsNullOrWhiteSpace(nombreCliente))
+                    throw new Exception("Debes ingresar el nombre o razón social del comprador.");
+
+                if (string.IsNullOrWhiteSpace(numeroDocumentoCliente))
+                    throw new Exception("Debes ingresar el número de documento o NIT del comprador.");
+
+                if (codigoTipoDocumentoIdentidad <= 0)
+                    throw new Exception("El tipo de documento es inválido.");
 
                 if (detalles == null || !detalles.Any())
                     throw new Exception("No hay detalles para registrar la venta.");
+
+                if (clienteId.HasValue)
+                {
+                    var cliente = db.Clientes.FirstOrDefault(c => c.Id == clienteId.Value && c.Activo);
+                    if (cliente == null)
+                        throw new Exception("El cliente seleccionado no existe o está inactivo.");
+                }
 
                 foreach (var detalle in detalles)
                 {
@@ -57,12 +80,19 @@ namespace SistemaInventario.Services
                 {
                     Fecha = DateTime.Now,
                     ClienteId = clienteId,
+                    NombreCliente = nombreCliente,
+                    NumeroDocumentoCliente = numeroDocumentoCliente,
+                    ComplementoCliente = complementoCliente,
+                    CorreoCliente = correoCliente,
+                    CelularCliente = celularCliente,
+                    CodigoTipoDocumentoIdentidad = codigoTipoDocumentoIdentidad,
+                    TieneExencion = tieneExencion,
                     Total = totalFinal,
                     DescuentoAdicional = descuentoAdicional,
                     CodigoMetodoPago = codigoMetodoPago,
                     MontoTotalSujetoIva = totalFinal,
                     EstadoFiscal = "Pendiente",
-                    Observacion = string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim()
+                    Observacion = observacion
                 };
 
                 db.Ventas.Add(venta);

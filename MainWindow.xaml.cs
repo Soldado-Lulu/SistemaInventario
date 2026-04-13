@@ -44,5 +44,13 @@ namespace SistemaInventario
         {
             Close();
         }
+        private void ConfiguracionEmpresa_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new ConfiguracionEmpresaPage());
+        }
+        private void Facturas_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new FacturasPage());
+        }
     }
 }

@@ -19,15 +19,22 @@ namespace SistemaInventario.Views
         private List<Cliente> _clientes = new();
         private List<VentaDetalle> _detalleVenta = new();
 
+        private class TipoDocumentoItem
+        {
+            public int Codigo { get; set; }
+            public string Nombre { get; set; } = string.Empty;
+        }
+
         public VentasPage()
         {
             InitializeComponent();
             CargarProductos();
             CargarClientes();
+            CargarTiposDocumento();
             ActualizarGrid();
             LimpiarFormularioProducto();
-            LimpiarFormularioClienteNuevo();
-            LimpiarInfoClienteSeleccionado();
+            LimpiarFormularioCliente();
+            ActualizarResumenCliente();
         }
 
         private void CargarProductos()
@@ -39,6 +46,8 @@ namespace SistemaInventario.Views
 
             CbProductos.ItemsSource = null;
             CbProductos.ItemsSource = _productos;
+            CbProductos.DisplayMemberPath = "Nombre";
+            CbProductos.SelectedValuePath = "Id";
         }
 
         private void CargarClientes()
@@ -49,7 +58,23 @@ namespace SistemaInventario.Views
 
             CbClientes.ItemsSource = null;
             CbClientes.ItemsSource = _clientes;
+            CbClientes.DisplayMemberPath = "NombreRazonSocial";
+            CbClientes.SelectedValuePath = "Id";
             CbClientes.SelectedIndex = -1;
+        }
+
+        private void CargarTiposDocumento()
+        {
+            var tipos = new List<TipoDocumentoItem>
+            {
+                new TipoDocumentoItem { Codigo = 1, Nombre = "CI" },
+                new TipoDocumentoItem { Codigo = 5, Nombre = "NIT" }
+            };
+
+            CbTipoDocumentoVenta.ItemsSource = tipos;
+            CbTipoDocumentoVenta.DisplayMemberPath = "Nombre";
+            CbTipoDocumentoVenta.SelectedValuePath = "Codigo";
+            CbTipoDocumentoVenta.SelectedValue = 1;
         }
 
         private void LimpiarFormularioProducto()
@@ -61,18 +86,26 @@ namespace SistemaInventario.Views
             TxtSubtotal.Text = string.Empty;
         }
 
-        private void LimpiarFormularioClienteNuevo()
+        private void LimpiarFormularioCliente()
         {
-            TxtNombreClienteNuevo.Text = string.Empty;
-            TxtDocumentoClienteNuevo.Text = string.Empty;
+            CbClientes.SelectedIndex = -1;
+            TxtNombreClienteVenta.Text = string.Empty;
+            TxtDocumentoClienteVenta.Text = string.Empty;
+            TxtComplementoClienteVenta.Text = string.Empty;
+            TxtCorreoClienteVenta.Text = string.Empty;
+            TxtCelularClienteVenta.Text = string.Empty;
+            ChkGuardarComoCliente.IsChecked = false;
+            ChkTieneExencion.IsChecked = false;
+            CbTipoDocumentoVenta.SelectedValue = 1;
         }
 
-        private void LimpiarInfoClienteSeleccionado()
+        private void ActualizarResumenCliente()
         {
-            TxtDocumentoCliente.Text = string.Empty;
-            TxtCorreoCliente.Text = string.Empty;
-            TxtClienteSeleccionado.Text = "Sin cliente";
-            TxtTelefonoCliente.Text = "-";
+            string nombre = TxtNombreClienteVenta.Text.Trim();
+            string telefono = TxtCelularClienteVenta.Text.Trim();
+
+            TxtClienteSeleccionado.Text = string.IsNullOrWhiteSpace(nombre) ? "Sin cliente" : nombre;
+            TxtTelefonoCliente.Text = string.IsNullOrWhiteSpace(telefono) ? "-" : telefono;
         }
 
         private void ActualizarInfoProducto()
@@ -107,23 +140,6 @@ namespace SistemaInventario.Views
             }
         }
 
-        private void ActualizarInfoCliente()
-        {
-            if (CbClientes.SelectedItem is not Cliente cliente)
-            {
-                LimpiarInfoClienteSeleccionado();
-                return;
-            }
-
-            TxtDocumentoCliente.Text = string.IsNullOrWhiteSpace(cliente.Complemento)
-                ? cliente.NumeroDocumento
-                : $"{cliente.NumeroDocumento} - {cliente.Complemento}";
-
-            TxtCorreoCliente.Text = cliente.Correo ?? string.Empty;
-            TxtClienteSeleccionado.Text = cliente.NombreRazonSocial;
-            TxtTelefonoCliente.Text = string.IsNullOrWhiteSpace(cliente.Telefono) ? "-" : cliente.Telefono;
-        }
-
         private void ActualizarGrid()
         {
             DgDetalleVenta.ItemsSource = null;
@@ -137,6 +153,30 @@ namespace SistemaInventario.Views
             TxtCantidadItems.Text = $"{items} ítems";
         }
 
+        private void CbClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CbClientes.SelectedItem is not Cliente cliente)
+                return;
+
+            TxtNombreClienteVenta.Text = cliente.NombreRazonSocial;
+            TxtDocumentoClienteVenta.Text = cliente.NumeroDocumento;
+            TxtComplementoClienteVenta.Text = cliente.Complemento ?? string.Empty;
+            TxtCorreoClienteVenta.Text = cliente.Correo ?? string.Empty;
+            TxtCelularClienteVenta.Text = cliente.Telefono ?? string.Empty;
+            CbTipoDocumentoVenta.SelectedValue = cliente.CodigoTipoDocumentoIdentidad;
+
+            ActualizarResumenCliente();
+        }
+
+        private void TxtDatosCliente_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ActualizarResumenCliente();
+        }
+
+        private void CbTipoDocumentoVenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
+
         private void CbProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ActualizarInfoProducto();
@@ -147,17 +187,87 @@ namespace SistemaInventario.Views
             ActualizarInfoProducto();
         }
 
-        private void CbClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private int? ObtenerClienteIdSiCoincide()
         {
-            ActualizarInfoCliente();
+            if (CbClientes.SelectedItem is Cliente clienteSeleccionado)
+                return clienteSeleccionado.Id;
+
+            string documento = TxtDocumentoClienteVenta.Text.Trim();
+            int codigoTipo = ObtenerCodigoTipoDocumento();
+
+            if (string.IsNullOrWhiteSpace(documento))
+                return null;
+
+            var clienteExistente = _clientes.FirstOrDefault(c =>
+                c.Activo &&
+                c.NumeroDocumento.Trim().Equals(documento, StringComparison.OrdinalIgnoreCase) &&
+                c.CodigoTipoDocumentoIdentidad == codigoTipo);
+
+            return clienteExistente?.Id;
+        }
+
+        private int ObtenerCodigoTipoDocumento()
+        {
+            if (CbTipoDocumentoVenta.SelectedItem is TipoDocumentoItem tipo)
+                return tipo.Codigo;
+
+            if (CbTipoDocumentoVenta.SelectedValue is int codigo)
+                return codigo;
+
+            return 1;
+        }
+
+        private int? GuardarClienteSiCorresponde()
+        {
+            if (ChkGuardarComoCliente.IsChecked != true)
+                return ObtenerClienteIdSiCoincide();
+
+            string nombre = TxtNombreClienteVenta.Text.Trim();
+            string documento = TxtDocumentoClienteVenta.Text.Trim();
+            string complemento = TxtComplementoClienteVenta.Text.Trim();
+            string correo = TxtCorreoClienteVenta.Text.Trim();
+            string celular = TxtCelularClienteVenta.Text.Trim();
+            int codigoTipo = ObtenerCodigoTipoDocumento();
+
+            var existente = _clientes.FirstOrDefault(c =>
+                c.Activo &&
+                c.NumeroDocumento.Trim().Equals(documento, StringComparison.OrdinalIgnoreCase) &&
+                c.CodigoTipoDocumentoIdentidad == codigoTipo);
+
+            if (existente != null)
+                return existente.Id;
+
+            var nuevoCliente = new Cliente
+            {
+                NombreRazonSocial = nombre,
+                NumeroDocumento = documento,
+                Complemento = string.IsNullOrWhiteSpace(complemento) ? null : complemento,
+                Correo = string.IsNullOrWhiteSpace(correo) ? null : correo,
+                Telefono = string.IsNullOrWhiteSpace(celular) ? null : celular,
+                CodigoTipoDocumentoIdentidad = codigoTipo,
+                Activo = true
+            };
+
+            var clienteGuardado = _clienteService.RegistrarCliente(nuevoCliente);
+            CargarClientes();
+
+            var recienGuardado = _clientes.FirstOrDefault(c => c.Id == clienteGuardado.Id);
+            if (recienGuardado != null)
+                CbClientes.SelectedItem = recienGuardado;
+
+            return clienteGuardado.Id;
         }
 
         private void BtnGuardarCliente_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                string nombre = TxtNombreClienteNuevo.Text.Trim();
-                string documento = TxtDocumentoClienteNuevo.Text.Trim();
+                string nombre = TxtNombreClienteVenta.Text.Trim();
+                string documento = TxtDocumentoClienteVenta.Text.Trim();
+                string complemento = TxtComplementoClienteVenta.Text.Trim();
+                string correo = TxtCorreoClienteVenta.Text.Trim();
+                string celular = TxtCelularClienteVenta.Text.Trim();
+                int codigoTipo = ObtenerCodigoTipoDocumento();
 
                 if (string.IsNullOrWhiteSpace(nombre))
                 {
@@ -175,9 +285,10 @@ namespace SistemaInventario.Views
                 {
                     NombreRazonSocial = nombre,
                     NumeroDocumento = documento,
-                    CodigoTipoDocumentoIdentidad = 1,
-                    Correo = null,
-                    Telefono = null,
+                    Complemento = string.IsNullOrWhiteSpace(complemento) ? null : complemento,
+                    Correo = string.IsNullOrWhiteSpace(correo) ? null : correo,
+                    Telefono = string.IsNullOrWhiteSpace(celular) ? null : celular,
+                    CodigoTipoDocumentoIdentidad = codigoTipo,
                     Activo = true
                 };
 
@@ -188,8 +299,6 @@ namespace SistemaInventario.Views
                 var clienteSeleccionado = _clientes.FirstOrDefault(c => c.Id == clienteGuardado.Id);
                 if (clienteSeleccionado != null)
                     CbClientes.SelectedItem = clienteSeleccionado;
-
-                LimpiarFormularioClienteNuevo();
 
                 MessageBox.Show("Cliente registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -274,7 +383,11 @@ namespace SistemaInventario.Views
 
         private void BtnLimpiarVenta_Click(object sender, RoutedEventArgs e)
         {
-            if (!_detalleVenta.Any())
+            if (!_detalleVenta.Any() &&
+                string.IsNullOrWhiteSpace(TxtNombreClienteVenta.Text) &&
+                string.IsNullOrWhiteSpace(TxtDocumentoClienteVenta.Text) &&
+                string.IsNullOrWhiteSpace(TxtCorreoClienteVenta.Text) &&
+                string.IsNullOrWhiteSpace(TxtCelularClienteVenta.Text))
             {
                 LimpiarFormularioProducto();
                 return;
@@ -292,13 +405,27 @@ namespace SistemaInventario.Views
             _detalleVenta.Clear();
             ActualizarGrid();
             LimpiarFormularioProducto();
+            LimpiarFormularioCliente();
+            ActualizarResumenCliente();
         }
 
         private void BtnGuardarVenta_Click(object sender, RoutedEventArgs e)
         {
-            if (CbClientes.SelectedItem is not Cliente clienteSeleccionado)
+            string nombreCliente = TxtNombreClienteVenta.Text.Trim();
+            string documentoCliente = TxtDocumentoClienteVenta.Text.Trim();
+            string complementoCliente = TxtComplementoClienteVenta.Text.Trim();
+            string correoCliente = TxtCorreoClienteVenta.Text.Trim();
+            string celularCliente = TxtCelularClienteVenta.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(nombreCliente))
             {
-                MessageBox.Show("Debes seleccionar un cliente.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Debes ingresar el nombre o razón social del comprador.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(documentoCliente))
+            {
+                MessageBox.Show("Debes ingresar el documento o NIT del comprador.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -310,6 +437,8 @@ namespace SistemaInventario.Views
 
             try
             {
+                int? clienteId = GuardarClienteSiCorresponde();
+
                 var detallesParaGuardar = _detalleVenta.Select(d => new VentaDetalle
                 {
                     ProductoId = d.ProductoId,
@@ -319,7 +448,14 @@ namespace SistemaInventario.Views
                 }).ToList();
 
                 int ventaId = _ventaService.RegistrarVenta(
-                    clienteSeleccionado.Id,
+                    clienteId,
+                    nombreCliente,
+                    documentoCliente,
+                    string.IsNullOrWhiteSpace(complementoCliente) ? null : complementoCliente,
+                    string.IsNullOrWhiteSpace(correoCliente) ? null : correoCliente,
+                    string.IsNullOrWhiteSpace(celularCliente) ? null : celularCliente,
+                    ObtenerCodigoTipoDocumento(),
+                    ChkTieneExencion.IsChecked == true,
                     detallesParaGuardar,
                     descuentoAdicional: 0m,
                     codigoMetodoPago: 1,
@@ -332,9 +468,8 @@ namespace SistemaInventario.Views
                 ActualizarGrid();
                 CargarProductos();
                 LimpiarFormularioProducto();
-
-                CbClientes.SelectedItem = null;
-                LimpiarInfoClienteSeleccionado();
+                LimpiarFormularioCliente();
+                ActualizarResumenCliente();
             }
             catch (Exception ex)
             {

@@ -29,5 +29,11 @@ namespace SistemaInventario.Views
         {
             NavigationService?.Navigate(new ReportesPage());
         }
+
+        private void BtnConfiguracionEmpresa_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService?.Navigate(new ConfiguracionEmpresaPage());
+        }
+
     }
 }
